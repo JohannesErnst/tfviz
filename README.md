@@ -1,6 +1,8 @@
 # TF frame viewer
 
-A small static website that draws coordinate frames the way RViz does (red = x, green = y, blue = z, z up).
+A static website that draws coordinate frames (red = x, green = y, blue = z). The website is accessible here:
+[TFviz](https://johannesernst.github.io/tfviz/)
+
 Enter a pose for **frame 1** relative to the world origin and a pose for **frame 2** relative to frame 1.
 The 3D view updates as you type or drag the sliders. Orbit with the left mouse button, pan with the right, zoom with the wheel.
 
@@ -17,12 +19,6 @@ site/style.css             styling
 site/app.js                math, 3D scene and input handling
 .github/workflows/pages.yml  deploys ./site to GitHub Pages
 ```
-
-## Deploy on GitHub Pages
-
-1. Create a repository and push this folder to the `main` branch.
-2. In the repository go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-3. The workflow deploys on every push to `main`. The site appears at `https://<user>.github.io/<repo>/`.
 
 ## Run locally
 
