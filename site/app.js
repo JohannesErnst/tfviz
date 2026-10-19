@@ -14,9 +14,9 @@ const DEFAULTS = {
 };
 const POS_LIMIT = 5;
 let state = structuredClone(DEFAULTS);
-let unit = 'deg';
+let unit = 'rad';
 
-/* ---------- Three.js scene (z is up) ---------- */
+/* --------------- Three.js scene --------------- */
 const view = document.getElementById('view');
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -147,7 +147,24 @@ const rounded = (v, f) => Number(v.toFixed(f.angle && unit === 'deg' ? 1 : 3));
 
 function buildPanel(key, title) {
   const el = document.getElementById(key);
-  el.innerHTML = `<h2>${title}</h2>`;
+  const header = document.createElement('div');
+  header.className = 'panel-header';
+
+  const heading = document.createElement('h2');
+  heading.textContent = title;
+
+  const zeroButton = document.createElement('button');
+  zeroButton.type = 'button';
+  zeroButton.textContent = 'Zero';
+  zeroButton.addEventListener('click', () => {
+    for (const f of FIELDS) state[key][f.key] = 0;
+    refreshInputs();
+    update();
+  });
+
+  header.append(heading, zeroButton);
+  el.appendChild(header);
+
   for (const f of FIELDS) {
     const row = document.createElement('div');
     row.className = 'row';
