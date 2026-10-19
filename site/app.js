@@ -216,6 +216,24 @@ function buildPanel(key, title) {
     inputs[key][f.key] = { range, num, f };
     el.appendChild(row);
   }
+
+  const poseInput = document.createElement('input');
+  poseInput.type = 'text';
+  poseInput.className = 'pose-input';
+  poseInput.placeholder = 'x=, y=, z=, roll=, pitch=, yaw=';
+  poseInput.setAttribute('aria-label', `${title} pose string`);
+  poseInput.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    const assignments = /\b(x|y|z|roll|pitch|yaw)\s*=\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)/gi;
+    for (const match of poseInput.value.matchAll(assignments)) {
+      const field = FIELDS.find((candidate) => candidate.key === match[1].toLowerCase());
+      const value = Number(match[2]);
+      if (field && Number.isFinite(value)) state[key][field.key] = fromUI(value, field);
+    }
+    refreshInputs();
+    update();
+  });
+  el.appendChild(poseInput);
 }
 
 function refreshInputs() {

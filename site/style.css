@@ -36,7 +36,7 @@ h2 { font-size: 14px; margin: 0; }
 .hint { margin: 0 0 14px; color: var(--muted); max-width: 60ch; }
 section { margin-bottom: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
 .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; color: var(--muted); }
-select, input[type=number], button {
+select, input[type=number], input[type=text], button {
   font: inherit; color: var(--text); background: var(--field);
   border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px;
 }
@@ -47,6 +47,7 @@ button:hover { border-color: var(--accent); }
 .row label { color: var(--muted); }
 input[type=range] { width: 100%; accent-color: var(--accent); }
 input[type=number] { width: 100%; }
+.pose-input { width: 100%; margin-top: 4px; }
 pre { margin: 0; padding: 10px; overflow-x: auto; background: var(--field); border-radius: 4px; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 #view { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
 #view canvas { display: block; }
