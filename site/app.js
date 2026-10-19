@@ -207,7 +207,7 @@ function buildPanel(key, title) {
       if (snapState[key] && src === range) value = snapValueInUI(value, f);
       state[key][f.key] = fromUI(value, f);
       const display = rounded(toUI(state[key][f.key], f), f);
-      src.value = String(display);
+      if (src === range) src.value = String(display); // slider needs the snapped value; the number box must not be rewritten while typing
       other.value = String(display);
       update();
     };
@@ -245,7 +245,8 @@ function loadHash() {
     const vals = (p.get(key) || '').split(',').map(parseFloat);
     if (vals.length === FIELDS.length && vals.every(Number.isFinite)) FIELDS.forEach((f, i) => (state[key][f.key] = vals[i]));
   }
-  if (p.get('unit') === 'rad') unit = 'rad';
+  const u = p.get('unit');
+  if (u === 'deg' || u === 'rad') unit = u;
 }
 
 /* ---------- Wiring ---------- */
