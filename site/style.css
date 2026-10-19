@@ -26,7 +26,13 @@ body {
 h1 { font-size: 20px; margin: 0 0 4px; }
 h2 { font-size: 14px; margin: 0; }
 .panel-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.panel-header h2 { flex: 1; }
 .panel-header button { flex-shrink: 0; padding: 3px 8px; }
+.panel-header .toggle-button.active {
+  border-color: var(--accent);
+  background: rgba(245, 197, 66, 0.12);
+  color: var(--text);
+}
 .hint { margin: 0 0 14px; color: var(--muted); max-width: 60ch; }
 section { margin-bottom: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
 .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; color: var(--muted); }

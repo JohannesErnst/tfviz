@@ -13,6 +13,9 @@ const DEFAULTS = {
   f2: { x: 1.2, y: 0, z: 0.6, roll: 30 * DEG, pitch: 0, yaw: 0 },
 };
 const POS_LIMIT = 5;
+const POSITION_SNAP_STEP = 0.25;
+const ANGLE_SNAP_STEP = Math.PI / 4;
+const snapState = { f1: false, f2: false };
 let state = structuredClone(DEFAULTS);
 let unit = 'rad';
 
@@ -143,7 +146,21 @@ function update() {
 const inputs = { f1: {}, f2: {} };
 const toUI = (v, f) => (f.angle && unit === 'deg' ? v / DEG : v);
 const fromUI = (v, f) => (f.angle && unit === 'deg' ? v * DEG : v);
-const rounded = (v, f) => Number(v.toFixed(f.angle && unit === 'deg' ? 1 : 3));
+const rounded = (v, f) => Number(v.toFixed(4));
+
+function snapValueInUI(value, field) {
+  if (field.angle) {
+    if (unit === 'deg') {
+      const snapped = Math.round(value / 45) * 45;
+      return Math.min(180, Math.max(-180, snapped));
+    }
+    const snapped = Math.round(value / ANGLE_SNAP_STEP) * ANGLE_SNAP_STEP;
+    return Math.min(Math.PI, Math.max(-Math.PI, snapped));
+  }
+
+  const snapped = Math.round((value + POS_LIMIT) / POSITION_SNAP_STEP) * POSITION_SNAP_STEP - POS_LIMIT;
+  return Math.min(POS_LIMIT, Math.max(-POS_LIMIT, snapped));
+}
 
 function buildPanel(key, title) {
   const el = document.getElementById(key);
@@ -162,7 +179,20 @@ function buildPanel(key, title) {
     update();
   });
 
-  header.append(heading, zeroButton);
+  const snapButton = document.createElement('button');
+  snapButton.type = 'button';
+  snapButton.className = 'toggle-button';
+  snapButton.textContent = 'Snap';
+  snapButton.setAttribute('aria-pressed', String(false));
+  snapButton.addEventListener('click', () => {
+    snapState[key] = !snapState[key];
+    snapButton.classList.toggle('active', snapState[key]);
+    snapButton.setAttribute('aria-pressed', String(snapState[key]));
+    refreshInputs();
+    update();
+  });
+
+  header.append(heading, zeroButton, snapButton);
   el.appendChild(header);
 
   for (const f of FIELDS) {
@@ -173,8 +203,12 @@ function buildPanel(key, title) {
     const onInput = (src, other) => () => {
       const v = parseFloat(src.value);
       if (!Number.isFinite(v)) return;
-      state[key][f.key] = fromUI(v, f);
-      other.value = src === num ? v : rounded(v, f);
+      let value = v;
+      if (snapState[key] && src === range) value = snapValueInUI(value, f);
+      state[key][f.key] = fromUI(value, f);
+      const display = rounded(toUI(state[key][f.key], f), f);
+      src.value = String(display);
+      other.value = String(display);
       update();
     };
     range.addEventListener('input', onInput(range, num));
@@ -191,7 +225,9 @@ function refreshInputs() {
       const step = f.angle ? (unit === 'deg' ? 1 : 0.01) : 0.01;
       Object.assign(range, { min: -lim, max: lim, step });
       num.step = step;
-      range.value = num.value = rounded(toUI(state[key][f.key], f), f);
+      const display = rounded(toUI(state[key][f.key], f), f);
+      range.value = String(display);
+      num.value = String(display);
     }
   }
 }
