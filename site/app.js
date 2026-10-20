@@ -220,7 +220,7 @@ function buildPanel(key, title) {
   const poseInput = document.createElement('input');
   poseInput.type = 'text';
   poseInput.className = 'pose-input';
-  poseInput.placeholder = 'x=3.12 or x: 3.12, y=, z=, roll=, pitch=, yaw=';
+  poseInput.placeholder = 'x=, y=, z=, roll=, pitch=, yaw= (or x: )';
   poseInput.setAttribute('aria-label', `${title} pose string`);
   poseInput.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter') return;
