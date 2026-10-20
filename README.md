@@ -8,6 +8,7 @@ Enter a pose for **frame 1** relative to the world origin and a pose for **frame
 The 3D view updates as you type or drag the sliders. Orbit with the left mouse button, pan with the right, zoom with the wheel.
 
 - Inputs per frame: `x, y, z, roll, pitch, yaw` (angles in degrees or radians, switchable).
+- The shared frame-size slider resizes frames 1 and 2 together from 0.1 to 1.0 in 0.1 increments.
 - Convention (ROS REP-103): `R = Rz(yaw) · Ry(pitch) · Rx(roll)`, i.e. fixed-axis roll, pitch, yaw.
 - Frame 2 in the world is `T_world_frame2 = T_world_frame1 · T_frame1_frame2`; the resulting pose and 4×4 matrix are shown in the side panel.
 - The current values are stored in the URL hash, so you can bookmark or share a configuration.

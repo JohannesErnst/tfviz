@@ -35,7 +35,11 @@ h2 { font-size: 14px; margin: 0; }
 }
 .hint { margin: 0 0 14px; color: var(--muted); max-width: 60ch; }
 section { margin-bottom: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
-.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; color: var(--muted); }
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-bottom: 14px; color: var(--muted); }
+.size-control { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.size-control input[type=range] { width: 56px; }
+.size-control output { min-width: 2.2em; color: var(--text); font-variant-numeric: tabular-nums; }
+.toolbar button { padding-right: 8px; padding-left: 8px; }
 select, input[type=number], input[type=text], button {
   font: inherit; color: var(--text); background: var(--field);
   border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px;

@@ -15,9 +15,11 @@ const DEFAULTS = {
 const POS_LIMIT = 5;
 const POSITION_SNAP_STEP = 0.25;
 const ANGLE_SNAP_STEP = Math.PI / 4;
+const DEFAULT_FRAME_SIZE = 0.8;
 const snapState = { f1: false, f2: false };
 let state = structuredClone(DEFAULTS);
 let unit = 'rad';
+let frameSize = DEFAULT_FRAME_SIZE;
 
 /* --------------- Three.js scene --------------- */
 const view = document.getElementById('view');
@@ -122,6 +124,8 @@ function update() {
   const p2 = new THREE.Vector3().setFromMatrixPosition(m2);
   m1.decompose(frames.f1.obj.position, frames.f1.obj.quaternion, frames.f1.obj.scale);
   m2.decompose(frames.f2.obj.position, frames.f2.obj.quaternion, frames.f2.obj.scale);
+  frames.f1.obj.scale.setScalar(frameSize);
+  frames.f2.obj.scale.setScalar(frameSize);
   frames.world.label.position.copy(origin).add(labelOffset);
   frames.f1.label.position.copy(p1).add(labelOffset);
   frames.f2.label.position.copy(p2).add(labelOffset);
@@ -255,6 +259,7 @@ function saveHash() {
   const p = new URLSearchParams();
   for (const key of ['f1', 'f2']) p.set(key, FIELDS.map((f) => +state[key][f.key].toFixed(4)).join(','));
   p.set('unit', unit);
+  p.set('frameSize', frameSize.toFixed(1));
   history.replaceState(null, '', '#' + p);
 }
 function loadHash() {
@@ -265,15 +270,33 @@ function loadHash() {
   }
   const u = p.get('unit');
   if (u === 'deg' || u === 'rad') unit = u;
+  const size = Number(p.get('frameSize'));
+  if (Number.isFinite(size) && size >= 0.1 && size <= 1 && Math.round(size * 10) === size * 10) frameSize = size;
 }
 
 /* ---------- Wiring ---------- */
 const unitSelect = document.getElementById('unit');
 unitSelect.addEventListener('change', () => { unit = unitSelect.value; refreshInputs(); update(); });
-document.getElementById('reset').addEventListener('click', () => { state = structuredClone(DEFAULTS); refreshInputs(); update(); });
+const frameSizeInput = document.getElementById('frame-size');
+const frameSizeValue = document.getElementById('frame-size-value');
+frameSizeInput.addEventListener('input', () => {
+  frameSize = Number(frameSizeInput.value);
+  frameSizeValue.value = frameSize.toFixed(1);
+  update();
+});
+document.getElementById('reset').addEventListener('click', () => {
+  state = structuredClone(DEFAULTS);
+  frameSize = DEFAULT_FRAME_SIZE;
+  frameSizeInput.value = String(frameSize);
+  frameSizeValue.value = frameSize.toFixed(1);
+  refreshInputs();
+  update();
+});
 
 loadHash();
 unitSelect.value = unit;
+frameSizeInput.value = String(frameSize);
+frameSizeValue.value = frameSize.toFixed(1);
 buildPanel('f1', 'Frame 1 (relative to world)');
 buildPanel('f2', 'Frame 2 (relative to frame 1)');
 refreshInputs();
