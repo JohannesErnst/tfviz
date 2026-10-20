@@ -220,11 +220,11 @@ function buildPanel(key, title) {
   const poseInput = document.createElement('input');
   poseInput.type = 'text';
   poseInput.className = 'pose-input';
-  poseInput.placeholder = 'x=, y=, z=, roll=, pitch=, yaw=';
+  poseInput.placeholder = 'x=3.12 or x: 3.12, y=, z=, roll=, pitch=, yaw=';
   poseInput.setAttribute('aria-label', `${title} pose string`);
   poseInput.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter') return;
-    const assignments = /\b(x|y|z|roll|pitch|yaw)\s*=\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)/gi;
+    const assignments = /\b(x|y|z|roll|pitch|yaw)\s*[=:]\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)/gi;
     for (const match of poseInput.value.matchAll(assignments)) {
       const field = FIELDS.find((candidate) => candidate.key === match[1].toLowerCase());
       const value = Number(match[2]);
