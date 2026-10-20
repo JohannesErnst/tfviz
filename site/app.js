@@ -20,6 +20,71 @@ const snapState = { f1: false, f2: false };
 let state = structuredClone(DEFAULTS);
 let unit = 'rad';
 let frameSize = DEFAULT_FRAME_SIZE;
+const coordinateHistory = [];
+const coordinateRedoHistory = [];
+let coordinateEdit = null;
+
+function sameState(a, b) {
+  return ['f1', 'f2'].every((key) => FIELDS.every((field) => a[key][field.key] === b[key][field.key]));
+}
+
+function pushCoordinateHistory(snapshot) {
+  coordinateHistory.push(snapshot);
+  if (coordinateHistory.length > 100) coordinateHistory.shift();
+  coordinateRedoHistory.length = 0;
+}
+
+function pushCoordinateRedoHistory(snapshot) {
+  coordinateRedoHistory.push(snapshot);
+  if (coordinateRedoHistory.length > 100) coordinateRedoHistory.shift();
+}
+
+function beginCoordinateEdit(element, mode) {
+  if (coordinateEdit?.element === element) return;
+  coordinateEdit = { element, mode, snapshot: structuredClone(state), recorded: false };
+}
+
+function recordCoordinateEdit(key, field, value) {
+  if (state[key][field] === value) return;
+  if (!coordinateEdit) coordinateEdit = { snapshot: structuredClone(state), recorded: false };
+  if (!coordinateEdit.recorded) {
+    pushCoordinateHistory(coordinateEdit.snapshot);
+    coordinateEdit.recorded = true;
+  }
+}
+
+function endCoordinateEdit(element, mode) {
+  if (!coordinateEdit) return;
+  if (element && coordinateEdit.element !== element) return;
+  if (mode && coordinateEdit.mode !== mode) return;
+  coordinateEdit = null;
+}
+
+function recordCoordinateChange(change) {
+  const snapshot = structuredClone(state);
+  change();
+  if (!sameState(snapshot, state)) pushCoordinateHistory(snapshot);
+}
+
+function undoCoordinateChange() {
+  const previous = coordinateHistory.pop();
+  if (!previous) return;
+  pushCoordinateRedoHistory(structuredClone(state));
+  state = previous;
+  coordinateEdit = null;
+  refreshInputs();
+  update();
+}
+
+function redoCoordinateChange() {
+  const next = coordinateRedoHistory.pop();
+  if (!next) return;
+  coordinateHistory.push(structuredClone(state));
+  state = next;
+  coordinateEdit = null;
+  refreshInputs();
+  update();
+}
 
 /* --------------- Three.js scene --------------- */
 const view = document.getElementById('view');
@@ -178,9 +243,11 @@ function buildPanel(key, title) {
   zeroButton.type = 'button';
   zeroButton.textContent = 'Zero';
   zeroButton.addEventListener('click', () => {
-    for (const f of FIELDS) state[key][f.key] = 0;
-    refreshInputs();
-    update();
+    recordCoordinateChange(() => {
+      for (const f of FIELDS) state[key][f.key] = 0;
+      refreshInputs();
+      update();
+    });
   });
 
   const snapButton = document.createElement('button');
@@ -209,12 +276,23 @@ function buildPanel(key, title) {
       if (!Number.isFinite(v)) return;
       let value = v;
       if (snapState[key] && src === range) value = snapValueInUI(value, f);
-      state[key][f.key] = fromUI(value, f);
+      const coordinateValue = fromUI(value, f);
+      recordCoordinateEdit(key, f.key, coordinateValue);
+      state[key][f.key] = coordinateValue;
       const display = rounded(toUI(state[key][f.key], f), f);
       if (src === range) src.value = String(display); // slider needs the snapped value; the number box must not be rewritten while typing
       other.value = String(display);
       update();
     };
+    if (range) {
+      range.addEventListener('pointerdown', () => beginCoordinateEdit(range, 'pointer'));
+      range.addEventListener('keydown', (event) => {
+        if (!event.ctrlKey && !event.metaKey && !event.altKey) beginCoordinateEdit(range, 'keyboard');
+      });
+      range.addEventListener('blur', () => endCoordinateEdit(range));
+    }
+    num.addEventListener('focus', () => beginCoordinateEdit(num, 'text'));
+    num.addEventListener('blur', () => endCoordinateEdit(num));
     range.addEventListener('input', onInput(range, num));
     num.addEventListener('input', onInput(num, range));
     inputs[key][f.key] = { range, num, f };
@@ -228,14 +306,16 @@ function buildPanel(key, title) {
   poseInput.setAttribute('aria-label', `${title} pose string`);
   poseInput.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter') return;
-    const assignments = /\b(x|y|z|roll|pitch|yaw)\s*[=:]\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)/gi;
-    for (const match of poseInput.value.matchAll(assignments)) {
-      const field = FIELDS.find((candidate) => candidate.key === match[1].toLowerCase());
-      const value = Number(match[2]);
-      if (field && Number.isFinite(value)) state[key][field.key] = fromUI(value, field);
-    }
-    refreshInputs();
-    update();
+    recordCoordinateChange(() => {
+      const assignments = /\b(x|y|z|roll|pitch|yaw)\s*[=:]\s*([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?)/gi;
+      for (const match of poseInput.value.matchAll(assignments)) {
+        const field = FIELDS.find((candidate) => candidate.key === match[1].toLowerCase());
+        const value = Number(match[2]);
+        if (field && Number.isFinite(value)) state[key][field.key] = fromUI(value, field);
+      }
+      refreshInputs();
+      update();
+    });
   });
   el.appendChild(poseInput);
 }
@@ -277,6 +357,21 @@ function loadHash() {
 /* ---------- Wiring ---------- */
 const unitSelect = document.getElementById('unit');
 unitSelect.addEventListener('change', () => { unit = unitSelect.value; refreshInputs(); update(); });
+window.addEventListener('pointerup', () => endCoordinateEdit(undefined, 'pointer'));
+window.addEventListener('keyup', () => endCoordinateEdit(undefined, 'keyboard'));
+window.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'z') {
+    if (coordinateHistory.length) {
+      event.preventDefault();
+      undoCoordinateChange();
+    }
+  } else if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'y') {
+    if (coordinateRedoHistory.length) {
+      event.preventDefault();
+      redoCoordinateChange();
+    }
+  }
+});
 const frameSizeInput = document.getElementById('frame-size');
 const frameSizeValue = document.getElementById('frame-size-value');
 frameSizeInput.addEventListener('input', () => {
@@ -285,11 +380,14 @@ frameSizeInput.addEventListener('input', () => {
   update();
 });
 document.getElementById('reset').addEventListener('click', () => {
-  state = structuredClone(DEFAULTS);
+  recordCoordinateChange(() => {
+    state = structuredClone(DEFAULTS);
+    refreshInputs();
+    update();
+  });
   frameSize = DEFAULT_FRAME_SIZE;
   frameSizeInput.value = String(frameSize);
   frameSizeValue.value = frameSize.toFixed(1);
-  refreshInputs();
   update();
 });
 
